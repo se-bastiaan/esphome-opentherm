@@ -6,11 +6,13 @@ from typing_extensions import NotRequired
 
 from esphome.const import (
     UNIT_CELSIUS,
+    UNIT_PARTS_PER_MILLION,
     UNIT_PERCENT,
     DEVICE_CLASS_COLD,
     DEVICE_CLASS_HEAT,
     DEVICE_CLASS_PRESSURE,
     DEVICE_CLASS_PROBLEM,
+    DEVICE_CLASS_WIND_SPEED,
     DEVICE_CLASS_TEMPERATURE,
     STATE_CLASS_MEASUREMENT,
     STATE_CLASS_TOTAL_INCREASING,
@@ -307,6 +309,119 @@ SENSORS: Schema[SensorSchema] = Schema({
         "keep_updated": True,
         "message_data": "f88",
     }),
+
+# VentStatus = 70, // flag8 / flag8  Master and Slave Status flags specific to Vent systems
+# 	VentNomVentSet, // _ / u8 Set the relative ventilation 0-100%
+# 	VentFault, // flag8 / flag8 Application specific fault flags
+# 	VentOEMFault, // flag8 / flag8 Oem specific fault flags
+# 	VentSlaveVentConfig = 74, // Slave Configuration Flags /  Slave MemberID Code
+# 	VentNomVent = 77, // _ / u8 Read the relative ventilation 0-100%
+# 	VentRelHumid, // _ / u8 Read the relative humidity 0-100%
+# 	VentCO2level, // u16 CO2 level in PPM (0-2000)
+# 	VentTsupplyin, // f8.8 Supply Outlet temperature
+# 	VentTsupplyout, // f8.8 Supply Outlet temperature
+# 	VentTexhaustin,// f8.8 Exhaust Inlet temperature
+# 	VentTexhaustout, // f8.8 Exhaust Outlet temperature
+# 	VentRPMexhaust, // u16 Actual RPM for inlet fan
+# 	VentRPMsupply, // u16 Actual RPM for supply fan
+# 	VentNomRelVent = 87, // _ / u8 Get the current relative ventilation
+
+    "vent_nom_vent": SensorSchema({
+        "description": "Currently set relative ventilation",
+        "unit_of_measurement": UNIT_PERCENT,
+        "accuracy_decimals": 0,
+        "device_class": DEVICE_CLASS_TEMPERATURE,
+        "state_class": STATE_CLASS_MEASUREMENT,
+        "message": "VentNomVent",
+        "keep_updated": True,
+        "message_data": "u8_lb",
+    }),
+    "vent_rel_humid": SensorSchema({
+        "description": "Current relative humidity",
+        "unit_of_measurement": UNIT_PERCENT,
+        "accuracy_decimals": 0,
+        "state_class": STATE_CLASS_MEASUREMENT,
+        "message": "VentRelHumid",
+        "keep_updated": True,
+        "message_data": "u8_lb",
+    }),
+    "vent_co2": SensorSchema({
+        "description": "CO2 level in PPM",
+        "unit_of_measurement": UNIT_PARTS_PER_MILLION,
+        "accuracy_decimals": 2,
+        "device_class": DEVICE_CLASS_TEMPERATURE,
+        "state_class": STATE_CLASS_MEASUREMENT,
+        "message": "VentCO2level",
+        "keep_updated": True,
+        "message_data": "u16",
+    }),
+    "vent_t_supply_in": SensorSchema({
+        "description": "HV Supply Inlet Temperature",
+        "unit_of_measurement": UNIT_CELSIUS,
+        "accuracy_decimals": 2,
+        "device_class": DEVICE_CLASS_TEMPERATURE,
+        "state_class": STATE_CLASS_MEASUREMENT,
+        "message": "VentTsupplyin",
+        "keep_updated": True,
+        "message_data": "f88",
+    }),
+    "vent_t_supply_out": SensorSchema({
+        "description": "HC Supply Outlet Temperature",
+        "unit_of_measurement": UNIT_CELSIUS,
+        "accuracy_decimals": 2,
+        "device_class": DEVICE_CLASS_TEMPERATURE,
+        "state_class": STATE_CLASS_MEASUREMENT,
+        "message": "VentTsupplyout",
+        "keep_updated": True,
+        "message_data": "f88",
+    }),
+    "vent_t_exhaust_in": SensorSchema({
+        "description": "HV Exhaust Inlet Temperature",
+        "unit_of_measurement": UNIT_CELSIUS,
+        "accuracy_decimals": 2,
+        "device_class": DEVICE_CLASS_TEMPERATURE,
+        "state_class": STATE_CLASS_MEASUREMENT,
+        "message": "VentTexhaustin",
+        "keep_updated": True,
+        "message_data": "f88",
+    }),
+    "vent_t_exhaust_out": SensorSchema({
+        "description": "Exhaust Outlet Temperature",
+        "unit_of_measurement": UNIT_CELSIUS,
+        "accuracy_decimals": 2,
+        "device_class": DEVICE_CLASS_TEMPERATURE,
+        "state_class": STATE_CLASS_MEASUREMENT,
+        "message": "VentTexhaustout",
+        "keep_updated": True,
+        "message_data": "f88",
+    }),
+    "vent_rpm_exhaust": SensorSchema({
+        "description": "Actual RPM for exhaust fan",
+        "unit_of_measurement": UNIT_CELSIUS,
+        "accuracy_decimals": 0,
+        "state_class": STATE_CLASS_MEASUREMENT,
+        "message": "VentRPMexhaust",
+        "keep_updated": True,
+        "message_data": "u16",
+    }),
+    "vent_rpm_supply": SensorSchema({
+        "description": "Actual RPM for supply fan",
+        "unit_of_measurement": "rpm",
+        "accuracy_decimals": 0,
+        "state_class": STATE_CLASS_MEASUREMENT,
+        "message": "VentRPMsupply",
+        "keep_updated": True,
+        "message_data": "u16",
+    }),
+    "vent_nom_rel_vent": SensorSchema({
+        "description": "Current relative ventilation",
+        "unit_of_measurement": UNIT_PERCENT,
+        "accuracy_decimals": 0,
+        "state_class": STATE_CLASS_MEASUREMENT,
+        "message": "VentNomRelVent",
+        "keep_updated": True,
+        "message_data": "u8_lb",
+    }),
 })
 
 class BinarySensorSchema(EntitySchema):
@@ -427,6 +542,31 @@ BINARY_SENSORS: Schema = Schema({
         "keep_updated": False,
         "message_data": "flag8_lb_1",
     }),
+    "vent_fault_indication": BinarySensorSchema({
+        "description": "VentStatus: Fault indication",
+        "device_class": DEVICE_CLASS_PROBLEM,
+        "message": "VentStatus",
+        "keep_updated": True,
+        "message_data": "flag8_lb_1",
+    }),
+    "vent_mode": BinarySensorSchema({
+        "description": "VentStatus: Mode",
+        "message": "VentStatus",
+        "keep_updated": True,
+        "message_data": "flag8_lb_2",
+    }),
+    "vent_bypass_status": BinarySensorSchema({
+        "description": "VentStatus: Bypass Status",
+        "message": "VentStatus",
+        "keep_updated": True,
+        "message_data": "flag8_lb_3",
+    }),
+    "vent_bypass_automatic_status": BinarySensorSchema({
+        "description": "VentStatus: Bypass Automatic Status",
+        "message": "VentStatus",
+        "keep_updated": True,
+        "message_data": "flag8_lb_4",
+    })
 })
 
 class SwitchSchema(EntitySchema):
@@ -559,5 +699,14 @@ INPUTS: Schema[InputSchema] = Schema({
         "keep_updated": True,
         "message_data": "f88",
         "range": (-40, 127),
+    }),
+    "vent_nom": InputSchema({
+        "description": "Vent setpoint",
+        "unit_of_measurement": UNIT_PERCENT,
+        "step": 0.1,
+        "message": "VentNomVentSet",
+        "keep_updated": True,
+        "message_data": "u8_lb",
+        "range": (0, 100),
     }),
 })
