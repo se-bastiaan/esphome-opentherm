@@ -61,9 +61,10 @@ namespace opentherm {
 class OpenthermHub : public Component {
 protected:
     // Communication pins for the OpenTherm interface
-    int in_pin, out_pin;
+    int in_pin, out_pin, slave_in_pin, slave_out_pin;
     // The OpenTherm interface from @ihormelnyk's library
-    OpenTherm* ot;
+    OpenTherm* mOT;
+    OpenTherm* sOT;
 
     // Use macros to create fields for every entity specified in the ESPHome configuration
     #define OPENTHERM_DECLARE_SENSOR(entity) sensor::Sensor* entity;
@@ -114,6 +115,8 @@ public:
     // Setters for the input and output OpenTherm interface pins
     void set_in_pin(int in_pin) { this->in_pin = in_pin; }
     void set_out_pin(int out_pin) { this->out_pin = out_pin; }
+    void set_slave_in_pin(int in_pin) { this->slave_in_pin = in_pin; }
+    void set_slave_out_pin(int out_pin) { this->slave_out_pin = out_pin; }
 
     #define OPENTHERM_SET_SENSOR(entity) void set_ ## entity(sensor::Sensor* sensor) { this->entity = sensor; }
     OPENTHERM_SENSOR_LIST(OPENTHERM_SET_SENSOR, )

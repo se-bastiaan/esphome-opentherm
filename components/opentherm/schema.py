@@ -383,7 +383,7 @@ SENSORS: Schema[SensorSchema] = Schema({
         "state_class": STATE_CLASS_MEASUREMENT,
         "message": "VentTexhaustin",
         "keep_updated": True,
-        "message_data": "f88",
+        "message_data": "u8_hb",
     }),
     "vent_t_exhaust_out": SensorSchema({
         "description": "Exhaust Outlet Temperature",
@@ -397,7 +397,7 @@ SENSORS: Schema[SensorSchema] = Schema({
     }),
     "vent_rpm_exhaust": SensorSchema({
         "description": "Actual RPM for exhaust fan",
-        "unit_of_measurement": UNIT_CELSIUS,
+        "unit_of_measurement": "rpm",
         "accuracy_decimals": 0,
         "state_class": STATE_CLASS_MEASUREMENT,
         "message": "VentRPMexhaust",

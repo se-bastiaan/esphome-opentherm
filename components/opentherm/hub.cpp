@@ -136,7 +136,7 @@ unsigned int OpenthermHub::build_request(OpenThermMessageID request_id) {
                 true
             #endif
             ;
-        return ot->buildSetBoilerStatusRequest(ch_enable, dhw_enable, cooling_enable, otc_active, ch2_active);
+        return mOT->buildSetBoilerStatusRequest(ch_enable, dhw_enable, cooling_enable, otc_active, ch2_active);
     }
 
     // Next, we start with the write requests from switches and other inputs,
@@ -150,7 +150,7 @@ unsigned int OpenthermHub::build_request(OpenThermMessageID request_id) {
     #define OPENTHERM_MESSAGE_WRITE_ENTITY(key, msg_data) \
             data = message_data::write_ ## msg_data(this->key->state, data);
     #define OPENTHERM_MESSAGE_WRITE_POSTSCRIPT \
-            return ot->buildRequest(OpenThermMessageType::WRITE_DATA, request_id, data); \
+            return mOT->buildRequest(OpenThermMessageType::WRITE_DATA, request_id, data); \
         }
     switch (request_id) {
         OPENTHERM_SWITCH_MESSAGE_HANDLERS(OPENTHERM_MESSAGE_WRITE_MESSAGE, OPENTHERM_MESSAGE_WRITE_ENTITY, , OPENTHERM_MESSAGE_WRITE_POSTSCRIPT, )
@@ -163,7 +163,7 @@ unsigned int OpenthermHub::build_request(OpenThermMessageID request_id) {
     #define OPENTHERM_MESSAGE_READ_MESSAGE(msg) \
         case OpenThermMessageID::msg: \
         ESP_LOGD(TAG, "Building %s read request", #msg); \
-        return ot->buildRequest(OpenThermMessageType::READ_DATA, request_id, 0);
+        return mOT->buildRequest(OpenThermMessageType::READ_DATA, request_id, 0);
     switch (request_id) {
         OPENTHERM_SENSOR_MESSAGE_HANDLERS(OPENTHERM_MESSAGE_READ_MESSAGE, OPENTHERM_IGNORE_2, , , )
         OPENTHERM_BINARY_SENSOR_MESSAGE_HANDLERS(OPENTHERM_MESSAGE_READ_MESSAGE, OPENTHERM_IGNORE_2, , , )
@@ -181,17 +181,17 @@ OpenthermHub::OpenthermHub(void(*handle_interrupt_callback)(void), void(*process
 }
 
 void IRAM_ATTR OpenthermHub::handle_interrupt() {
-    this->ot->handleInterrupt();
+    this->mOT->handleInterrupt();
 }
 
 void OpenthermHub::process_response(unsigned long response, OpenThermResponseStatus status) {
     // First check if the response is valid and short-circuit execution if it isn't.
-    if (!ot->isValidResponse(response)) {
+    if (!mOT->isValidResponse(response)) {
         ESP_LOGW(
             TAG, 
             "Received invalid OpenTherm response: %s, status=%s", 
             String(response, HEX).c_str(),
-            String(ot->getLastResponseStatus()).c_str()
+            String(mOT->getLastResponseStatus()).c_str()
         );
         return;
     }
@@ -222,8 +222,10 @@ void OpenthermHub::process_response(unsigned long response, OpenThermResponseSta
 
 void OpenthermHub::setup() {
     ESP_LOGD(TAG, "Setting up OpenTherm component");
-    this->ot = new OpenTherm(this->in_pin, this->out_pin, false);
-    this->ot->begin(this->handle_interrupt_callback, this->process_response_callback);
+    this->mOT = new OpenTherm(this->in_pin, this->out_pin, false);
+    this->mOT->begin(this->handle_interrupt_callback, this->process_response_callback);
+
+    this->sOT = new OpenTherm(this->slave_in_pin, this->slave_out_pin, true);
 
     // Ensure that there is at least one request, as we are required to
     // communicate at least once every second. Sending the status request is
@@ -234,11 +236,11 @@ void OpenthermHub::setup() {
 }
 
 void OpenthermHub::on_shutdown() {
-    this->ot->end();
+    this->mOT->end();
 }
 
 void OpenthermHub::loop() {
-    if (this->ot->isReady()) {
+    if (this->mOT->isReady()) {
         if (this->initializing && this->current_message_iterator == this->initial_messages.end()) {
             this->initializing = false;
             this->current_message_iterator = this->repeating_messages.begin();
@@ -247,11 +249,11 @@ void OpenthermHub::loop() {
         }
 
         unsigned int request = this->build_request(*this->current_message_iterator);
-        this->ot->sendRequestAync(request);
+        this->mOT->sendRequestAync(request);
         ESP_LOGD(TAG, "Sent OpenTherm request: %s", String(request, HEX).c_str());
         this->current_message_iterator++;
     }
-    this->ot->process();
+    this->mOT->process();
 }
 
 #define ID(x) x
