@@ -63,8 +63,8 @@ protected:
     // Communication pins for the OpenTherm interface
     int in_pin, out_pin, slave_in_pin, slave_out_pin;
     // The OpenTherm interface from @ihormelnyk's library
-    OpenTherm* mOT;
-    OpenTherm* sOT;
+    OpenTherm* mOT; // This is the master side of our code, which is connector a slave aka boiler
+    OpenTherm* sOT; // This is the slave side of our code, which is connected to a master aka thermostat
 
     // Use macros to create fields for every entity specified in the ESPHome configuration
     #define OPENTHERM_DECLARE_SENSOR(entity) sensor::Sensor* entity;
